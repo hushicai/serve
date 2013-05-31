@@ -30,6 +30,8 @@ program
   .option('-D, --no-dirs', 'disable directory serving')
   .option('-f, --favicon <path>', 'serve the given favicon')
   .option('-C, --cors', 'allows cross origin access serving')
+  .option('    --delay <pattern>', 'delay specified pattern files when response.')
+  .option('    --time [timestamps]', 'how long to delay.')
   .parse(process.argv);
 
 // path
@@ -90,6 +92,27 @@ if (program.cors) {
     next();
   });
 }
+
+//delay specified pattern files in specified time.
+if (program.delay && program.time && parseInt(program.time) >= 1000) {
+    console.log('delay', program.delay);   
+    console.log('time', program.time);
+    server.use(function(req, res, next) {
+        if (req.url.match(new RegExp(''+ program.delay +'\?|$'), 'i')) {
+            req.pause();
+            setTimeout(function() {
+                console.log('after ' + program.time + '...');
+                req.resume();
+
+                next();
+            }, program.time);
+            console.log('delay', req.url);
+        } else {
+            next();
+        }
+    });
+}
+
 // static files
 server.use(connect.static(path, { hidden: program.hidden }));
 
